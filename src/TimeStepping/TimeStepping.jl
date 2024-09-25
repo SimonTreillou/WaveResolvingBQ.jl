@@ -15,7 +15,7 @@ end
 # Méthode pour Euler
 function timestepping(::Euler, var, Δt, Δx, c, a, b, rhs)
     # Étape d'Euler
-    return var .- Δt * rhss
+    return var .- Δt .* rhs(var,Δx,c,a,b)
 end
 
 function timestepping(::RK4, var, Δt, Δx, c, a, b, rhs)
