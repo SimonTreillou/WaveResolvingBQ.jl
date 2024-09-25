@@ -1,54 +1,63 @@
 module WaveResolvingBQ
 
-# Include submodule files
-include("equations.jl")
-include("discretization.jl")
-include("time_stepping.jl")
-include("boundary_conditions.jl")
-include("utils.jl")
+import Statistics
+import Base.@kwdef
 
-export run_simulation, BoussinesqState
+include("Parameters/Parameters.jl")
 
-using .Utils
-using .Equations
-using .Discretization
-using .TimeStepping
-using .BoundaryConditions
+export SimulationParameters
+export check_parameters
 
+include("TimeStepping/TimeStepping.jl")
 
-# Define a structure to hold the simulation state
-struct BoussinesqState
-    x::Vector{Float64}
-    η::Vector{Float64}
-    u::Vector{Float64}
-    t::Float64
-end
+export TimeStepper
+export timestepping
 
-# Main simulation function
-function run_simulation(L::Float64 = 1000.0, Nx::Int = 1000, h::Float64 = 10.0, g::Float64 = 9.81,
-                       T::Float64 = 10.0, dt::Float64 = 0.01)
-    dx = L / (Nx - 1)
-    x = LinRange(0, L, Nx)
-    η, u = Utils.initialize_conditions(x, L)
-    
-    Nt = Int(T / dt)
-    
-    state = BoussinesqState(x, η, u, 0.0)
-    
-    for n in 1:Nt
-        state.η, state.u = TimeStepping.rk4_step(state.η, state.u, dt, dx, h, g)
-        BoundaryConditions.apply_boundary_conditions!(state.η, state.u)
-        state.t += dt
+include("Discretization/Discretization.jl")
+
+export SpatialScheme
+export discretize
+
+include("Model/Model.jl")
+
+export Model
+export modelize 
+
+include("Utils/Utils.jl")
+
+export window
+
+function run(M::Model,T::TimeStepper,S::SpatialScheme,P::SimulationParameters,η)
+    TV = zeros(P.Nt)
+    a=0.0
+    b=0.0
+    for step in 1:P.Nt
+
+        function deriv(η, Δx, c, a, b)
+            return modelize(M,S,η, Δx, c, a, b)
+        end
+        η_new = timestepping(T,η, P.Δt, P.Δx, P.c, a, b,deriv)
+
+        # Check for NaN or Inf
+        if any(isnan, η_new) || any(isinf, η_new)
+            println("Numerical instability detected at step $step, time $(step * Δt)")
+            break
+        end
         
-        # Optional: Print progress or handle output
-        if n % (Nt ÷ 10) == 0
-            @info "Simulation progress: $(100 * n / Nt)%"
+        # Update previous and current states
+        η_old = copy(η)
+        η = copy(η_new)
+        TV[step] = Statistics.var(η)
+        
+        # (Optional) Visualization or data storage
+        if step % 1000 == 0
+            println("Time: $(step * P.Δt)")
+            # You can plot η here using Plots.jl or other packages
         end
     end
-    
-    return state
+    return η,TV
 end
 
+export run
 
 end # module WaveResolvingBQ
-

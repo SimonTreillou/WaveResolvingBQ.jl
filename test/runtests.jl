@@ -1,6 +1,10 @@
 using Test
-using BoussinesqModel
+using WaveResolvingBQ
+using Documenter
 
-# Import specific test files
-include("test_equations.jl")
-# include other test files as needed
+@testset "Testing WaveResolvingBQ" begin
+
+    @testset "Window with Euler+UP1 at CFL=1" begin
+        include("test_equations.jl")
+    end
+end

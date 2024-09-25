@@ -1,16 +1,21 @@
 using Test
 using WaveResolvingBQ
 
-@testset "Equations Tests" begin
-    # Simple test for first derivative
-    f = [0.0, 1.0, 2.0, 3.0, 4.0]
-    dx = 1.0
-    df_expected = [1.0, 1.0, 1.0, 1.0, 1.0]
-    df_computed = BoussinesqModel.first_derivative(f, dx)
-    @test df_computed ≈ df_expected
-    
-    # Test third derivative (example with zeros)
-    d3f_expected = [0.0, 0.0, 0.0, 0.0, 0.0]
-    d3f_computed = BoussinesqModel.third_derivative(f, dx)
-    @test d3f_computed ≈ d3f_expected
+@testset "Window with Euler+UP1 at CFL=1" begin     
+    # Parameters
+    P=WaveResolvingBQ.SimulationParameters(Δt=0.1,T=5000.0,Δx=0.1,Lx=100.0,c=1.0)
+
+    # Init
+    η_init = window(P.x,0.1,1.0)
+
+    # Model
+    M=WaveResolvingBQ.Advection()
+    # Timestepping
+    T=WaveResolvingBQ.Euler()
+    # Spatial scheme
+    S=WaveResolvingBQ.UP1()
+
+    η_end,TV= WaveResolvingBQ.run(M,T,S,P,η_init)
+
+    @test η_init ≈ η_end
 end
