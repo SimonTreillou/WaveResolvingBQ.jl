@@ -2,15 +2,19 @@
 abstract type SpatialScheme end
 
 # 2. Définir des sous-types concrets pour chaque méthode
-struct UP1 <: SpatialScheme
+#struct UP1 <: SpatialScheme
     # Paramètres spécifiques à Euler si nécessaire
-end
+#end
 
-struct WENO5 <: SpatialScheme
+include("UP1.jl")
+
+#struct WENO5 <: SpatialScheme
     # Paramètres spécifiques à RK4 si nécessaire
-end
+#end
 
+include("WENO5.jl")
 
+"""
 function discretize(::UP1,var, Δx, c, a, b)
     n = length(var)
     dudx2 = zeros(n)  # To store the second derivative
@@ -26,5 +30,4 @@ function discretize(::UP1,var, Δx, c, a, b)
     dudx2 = (circshift(var, 0) - circshift(var, 1)) / (Δx)
     return dudx2
 end
-
-include("WENO5.jl")
+"""
