@@ -2,20 +2,28 @@
 abstract type TimeStepper end
 
 # 2. Définir des sous-types concrets pour chaque méthode
-struct Euler <: TimeStepper
+#struct Euler <: TimeStepper
     # Paramètres spécifiques à Euler si nécessaire
-end
+#end
 
-struct RK4 <: TimeStepper
+include("Euler.jl")
+
+#struct RK3 <: TimeStepper
     # Paramètres spécifiques à RK4 si nécessaire
-end
+#end
+include("RK3.jl")
+
+#struct RK4 <: TimeStepper
+    # Paramètres spécifiques à RK4 si nécessaire
+#end
+include("RK4.jl")
 
 # 3. Définir la fonction générique `timestepping` avec dispatch multiple
-
+"""
 # Méthode pour Euler
 function timestepping(::Euler, var, Δt, Δx, c, a, b, rhs)
     # Étape d'Euler
-    return var .- Δt .* rhs(var,Δx,c,a,b)
+    return var .+ Δt .* rhs(var,Δx,c,a,b)
 end
 
 function timestepping(::RK4, var, Δt, Δx, c, a, b, rhs)
@@ -25,3 +33,4 @@ function timestepping(::RK4, var, Δt, Δx, c, a, b, rhs)
     k4 = Δt * rhs(var .+ k3, Δx, c, a, b)
     return var .+ (k1 .+ 2*k2 .+ 2*k3 .+ k4) / 6
 end
+"""
