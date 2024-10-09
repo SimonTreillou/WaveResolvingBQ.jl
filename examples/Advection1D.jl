@@ -16,7 +16,7 @@ for i in 1:G.Nx
     end
 end
 
-plot(G.x, C_init, title="1D Advection toy case", xlabel="x (m)", ylabel="C (ppm)", line=(:black, 4, :dotted), label="T=0")
+plot(G.x, C_init, title="1D Advection toy case", xlabel="x (m)", ylabel="C (ppm)", line=(:black, 4), label="T=0",dpi=600)
 
 # Model
 M=WaveResolvingBQ.Advection(0.5)
@@ -34,3 +34,4 @@ C_WENO,TV=  WaveResolvingBQ.run(M,T,S,P,B,G,C_init)
 
 plot!(G.x,C_UP1,label="Euler+UP1",line=(4,:blue,0.7))
 plot!(G.x,C_WENO,label="RK4+WENO5",line=(4,:red,0.7))
+savefig("./examples/figs/advection1D.png")

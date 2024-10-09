@@ -16,7 +16,7 @@ function exact_solution(x,t)
     return exp.( -(x.-μ).^2 / (2 * σ^2 + 4 .*D .*t)) .* Mₜ * σ ./ sqrt.(σ^2 + 2*D*t)
 end
 C_init = exact_solution(G.x,0.0)
-plot(G.x, C_init, title="1D Diffusion toy case", xlabel="x (m)", ylabel="C (ppm)", line=(:black, 4, :dotted), label="T=0")
+plot(G.x, C_init, title="1D Diffusion toy case", xlabel="x (m)", ylabel="C (ppm)", line=(:black, 4, :dotted), label="T=0",dpi=600)
 
 # Model
 M=WaveResolvingBQ.Diffusion(D)
@@ -36,3 +36,4 @@ C_WENO,TV=  WaveResolvingBQ.run(M,T,S,P,B,G,C_init)
 plot!(G.x,C_UP1,label="Euler+UP1",line=(4,:blue,0.5))
 plot!(G.x,C_WENO,label="RK4+WENO5",line=(4,:green,0.5))
 plot!(G.x, exact_solution(G.x,P.T), line=(2,:dash, :red),linestyle=:dot, label="Exact solution")
+savefig("./examples/figs/diffusion1D.png")

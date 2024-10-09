@@ -23,8 +23,8 @@ function dΦdx(x,t)
 end
 
 u_init = - 2*ν ./Φ(G.x,0.0) .* dΦdx(G.x,0.0) .+ 4
-exact_solution = - 2*ν ./Φ(G.x,P.T) .* dΦdx(G.x,P.T) .+ 4
-plot(G.x, u_init, title=L"\textbf{Burgers \enspace equation:} \partial_t u + u \partial_x u = \nu \partial_{xx} u", xlabel="x (m)", ylabel="u (ppm)", line=(:black, 4), label="T=0")
+exactsolution = - 2*ν ./Φ(G.x,P.T) .* dΦdx(G.x,P.T) .+ 4
+plot(G.x, u_init, title=L"\textbf{Burgers \enspace equation:} \partial_t u + u \partial_x u = \nu \partial_{xx} u", xlabel="x (m)", ylabel="u (ppm)", line=(:black, 4), label="T=0",dpi=600)
 
 # Model
 M=WaveResolvingBQ.Burgers(ν)
@@ -44,4 +44,5 @@ uWENO,TV=  WaveResolvingBQ.run(M,T,S,P,B,G,u_init)
 
 plot!(G.x,uUP1,label="Euler+UP1",line=(4,:blue,0.5))
 plot!(G.x,uWENO,label="RK4+WENO5",line=(4,:green,0.5))
-plot!(G.x, exact_solution, line=(2,:dash, :red),linestyle=:dot, label="Exact solution")
+plot!(G.x, exactsolution, line=(2,:dash, :red),linestyle=:dot, label="Exact solution")
+savefig("./examples/figs/burgers1D.png")
