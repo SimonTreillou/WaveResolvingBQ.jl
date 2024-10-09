@@ -3,6 +3,10 @@ module WaveResolvingBQ
 import Statistics
 import Base.@kwdef
 
+include("Grid/Grid.jl")
+
+export Grid
+
 include("Parameters/Parameters.jl")
 
 export SimulationParameters
@@ -12,6 +16,10 @@ include("TimeStepping/TimeStepping.jl")
 
 export TimeStepper
 export timestepping
+
+include("Boundaries/Boundaries.jl")
+
+export Boundaries
 
 include("Discretization/Discretization.jl")
 
@@ -27,20 +35,22 @@ include("Utils/Utils.jl")
 
 export window
 
-function run(M::Model,T::TimeStepper,S::SpatialScheme,P::SimulationParameters,η)
+function run(M::Model,T::TimeStepper,S::SpatialScheme,P::SimulationParameters,B::Boundaries,G::Grid,η)
     TV = zeros(P.Nt)
-    a=0.0
-    b=0.0
+
     for step in 1:P.Nt
 
-        function deriv(η, Δx, c, a, b)
-            return modelize(M,S,η, Δx, c, a, b)
-        end
-        η_new = timestepping(T,η, P.Δt, P.Δx, P.c, a, b,deriv)
+        #c=-cos.(2*π/1*P.Δt*step)*cmax
+        #function deriv(η)
+        #    return modelize(M,S,B,η,P)
+        #end
+        deriv = modelize(M,S,G,B,η)
+        
+        η_new = timestepping(T,P,η,deriv)
 
         # Check for NaN or Inf
         if any(isnan, η_new) || any(isinf, η_new)
-            println("Numerical instability detected at step $step, time $(step * Δt)")
+            println("Numerical instability detected at step $step, time $(step * P.Δt)")
             break
         end
         
@@ -48,6 +58,7 @@ function run(M::Model,T::TimeStepper,S::SpatialScheme,P::SimulationParameters,η
         η_old = copy(η)
         η = copy(η_new)
         TV[step] = Statistics.var(η)
+        TV[step] = Statistics.mean(η)
         
         # (Optional) Visualization or data storage
         if step % 1000 == 0
