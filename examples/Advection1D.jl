@@ -4,7 +4,7 @@ using Statistics
 using BenchmarkTools
 
 # Parameters
-P=WaveResolvingBQ.SimulationParameters(Δt=0.01,T=5.0)
+P=WaveResolvingBQ.SimulationParameters(Δt=0.01,T=1.0)
 G=WaveResolvingBQ.Grid(Lx=6,Δx=0.01)
 
 # Init

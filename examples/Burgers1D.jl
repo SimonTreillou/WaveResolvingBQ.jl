@@ -6,8 +6,8 @@ using LaTeXStrings
 
 # Parameters
 ν = 0.07
-P=WaveResolvingBQ.SimulationParameters(Δt=2*π/400 * ν,Nt=100,T=100*2*π/100 * ν)
-G=WaveResolvingBQ.Grid(Lx=2*π,Δx=2*π/400,Nx=101)
+P=WaveResolvingBQ.SimulationParameters(Δt=2*π/1000 * ν,Nt=100,T=100*2*π/100 * ν)
+G=WaveResolvingBQ.Grid(Lx=2*π,Δx=2*π/500,h=1.0)
 
 #check_parameters(P)
 

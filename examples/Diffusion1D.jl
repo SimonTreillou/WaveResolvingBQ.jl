@@ -4,7 +4,7 @@ using Statistics
 using BenchmarkTools
 
 # Parameters
-P=WaveResolvingBQ.SimulationParameters(Δt=0.02,T=100.0)
+P=WaveResolvingBQ.SimulationParameters(Δt=0.002,T=100.0)
 G=WaveResolvingBQ.Grid(Lx=100.0,Δx=1.0)
 
 # Initialization
@@ -36,4 +36,4 @@ C_WENO,TV=  WaveResolvingBQ.run(M,T,S,P,B,G,C_init)
 plot!(G.x,C_UP1,label="Euler+UP1",line=(4,:blue,0.5))
 plot!(G.x,C_WENO,label="RK4+WENO5",line=(4,:green,0.5))
 plot!(G.x, exact_solution(G.x,P.T), line=(2,:dash, :red),linestyle=:dot, label="Exact solution")
-savefig("./examples/figs/diffusion1D.png")
+#savefig("./figs/diffusion1D.png")
