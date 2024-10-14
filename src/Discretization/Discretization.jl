@@ -1,33 +1,37 @@
-# 1. Définir un type abstrait pour les méthodes de time-stepping
+"""
+    SpatialScheme is an abstract type defining the numerical scheme used for spatial discretization.
+
+    Currently implemented:
+        - UP1
+        - WENO5
+"""
 abstract type SpatialScheme end
 
-# 2. Définir des sous-types concrets pour chaque méthode
-#struct UP1 <: SpatialScheme
-    # Paramètres spécifiques à Euler si nécessaire
-#end
 
+# Include definitions for flux depending on chosen spatial schemes.
 include("UP1.jl")
-
-#struct WENO5 <: SpatialScheme
-    # Paramètres spécifiques à RK4 si nécessaire
-#end
-
 include("WENO5.jl")
 
-"""
-function discretize(::UP1,var, Δx, c, a, b)
-    n = length(var)
-    dudx2 = zeros(n)  # To store the second derivative
-    
-    dudx2[3:n-2] = (circshift(var[3:n-2], -1) - 2 * var[3:n-2] + circshift(var[3:n-2], 1)) / Δx^2
-    
-    # Handling boundary conditions (you may need to adjust this based on your problem)
-    dudx2[1] = (var[1] - 2*var[1] + var[2]) / Δx^2  # Example boundary handling
-    dudx2[2] = (var[2] - 2*var[1] + var[2]) / Δx^2  # Example boundary handling
-    dudx2[n-1] = (var[n] - 2*var[n-1] + var[n]) / Δx^2  # Example boundary handling
-    dudx2[n] = (var[n] - 2*var[n-1] + var[n]) / Δx^2  # Example boundary handling
 
-    dudx2 = (circshift(var, 0) - circshift(var, 1)) / (Δx)
-    return dudx2
+# Define main discretize function
+function discretize(S::SpatialScheme,var,G::Grid,order,velocity::Float64)
+    tmp = zeros(G.Nx)
+    s = floor(Int,sign(velocity)<0) * floor(Int,order!==2) # 1 if velocity <0, 0 elsewhere
+
+    for i=S.nghost:(G.Nx-S.nghost)
+        tmp[i]=(flux(S,var,i+s,G,order) - flux(S,var,i-1+s,G,order))/G.Δx
+    end
+
+    return tmp
 end
-"""
+
+function discretize(S::SpatialScheme,var,G::Grid,order,velocity::Vector{Float64})
+    tmp = zeros(G.Nx)
+    s = floor.(Int,sign.(velocity).<0) .* floor(Int,order!==2)
+
+    for i=S.nghost:(G.Nx-S.nghost)
+        tmp[i]=(flux(S,var,i+s[i],G,order) - flux(S,var,i-1+s[i],G,order))/G.Δx
+    end
+
+    return tmp
+end

@@ -1,21 +1,24 @@
+"""
+    UP1 is the upwind scheme of order 1 defined as:
 
-struct UP1 <: SpatialScheme
+        - (uᵢⁿ - uᵢⁿ⁻¹)/Δx for positive velocities
+        - (uᵢⁿ⁺¹ - uᵢⁿ)/Δx for negative velocities
+"""
+struct UP1{T} <: SpatialScheme
+    nghost::Union{T,Nothing}
 end
 
-
-function discretize(::UP1,var,G::Grid,order;velocity=var*0 .+ 1.0)
-    #n = length(var)
-    dudx2 = zeros(G.Nx)  # To store the second derivative
-    
-    if order==1
-        for i=2:(G.Nx-1)
-            dudx2[i]=(var[i]-var[i-1])/G.Δx
-        end
-    elseif order==2
-        for i=2:(G.Nx-1)
-            dudx2[i]=(var[i+1]-2*var[i]+var[i-1])/G.Δx^2
-        end
+function UP1(; nghost=nothing)
+    if isnothing(nghost)
+        nghost=2
     end
+    return UP1(nghost)
+end
 
-    return dudx2
+function flux(S::UP1,var,i,G::Grid,order)
+    if order==1
+        return var[i]
+    elseif order==2
+        return (var[i+1]-var[i])/G.Δx
+    end
 end

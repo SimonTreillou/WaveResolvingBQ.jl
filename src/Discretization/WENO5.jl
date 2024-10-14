@@ -1,8 +1,14 @@
 
-struct WENO5 <: SpatialScheme
-    # Paramètres spécifiques à RK4 si nécessaire
+struct WENO5{T} <: SpatialScheme
+    nghost::Union{T,Nothing}
 end
 
+function WENO5(;nghost=nothing)
+    if isnothing(nghost)
+        nghost=4
+    end
+    return WENO5(nghost)
+end
 
 function weno5(s, i, sign)
     # Constants
@@ -54,188 +60,73 @@ function flux_weno5(s_lst, u, i, dt, dx)
     end
 end
 
-function flux_weno52(s_lst, u, i, dt, dx)
-    """
-    Main flux function for WENO5.
-    """
-    s = s_lst[end]
-
-    if u[i] > 0
-        return u[i] * weno5(s, i, 1)
-    else
-        return u[i] * weno5(s, i + 1, -1)
-    end
-end
-
-function weno5_first_derivative(η, Δx,c)
-    n = length(η)
-    #d_eta_dx = Union{Float64, Nothing}[nothing for _ in 1:n]  # To store the first derivative
-    d_eta_dx = zeros(n)
-    M = floor(Int,n/2)
-
-    #S=-floor.(Int,sign.(c))
-
-    # Loop through interior points (avoiding boundaries for now)
-    for i in 4:n-4
-        # Compute WENO5 derivative at each point using 5-point stencil
-        if c[i]>0
-        #if true
-        #if S==1
-            S=1
-            #d_eta_dx[i] =  (-weno5(η[i-3:i+1], 3, S)+weno5(η[i-2:i+2], 3, S))/Δx
-            d_eta_dx[i] = (weno5(η, i, 1) - weno5(η, i-1, 1)) / Δx
-            #d_eta_dx[i] =  (weno5(η[i-1:i+3], 3, S)-weno5(η[i-2:i+2], 3, S))/Δx
-        elseif c[i]<0
-        #elseif false
-            S=-1
-        #elseif S==-1
-            #d_eta_dx[i] =  (weno5(η[i-1:i+3], 3, -1)-weno5(η[i-2:i+2], 3, -1))/Δx
-            #d_eta_dx[i] =  (weno5(η[i-2:i+2], 3, S)-weno5(η[i-1:i+3], 3, S))/Δx
-            d_eta_dx[i] = (weno5(η, i+1, -1) - weno5(η, i, -1)) / Δx
-        end
-    end
-    d_eta_dx[3] = (η[4]-η[3])/Δx
-    d_eta_dx[2] = (η[3]-η[2])/Δx
-    d_eta_dx[1] = (η[2]-η[1])/Δx
-
-    d_eta_dx[n-3] = (η[n-3]-η[n-4])/Δx
-    d_eta_dx[n-2] = (η[n-2]-η[n-3])/Δx
-    d_eta_dx[n-1] = (η[n-1]-η[n-2])/Δx
-    d_eta_dx[n] = (η[n]-η[n-1])/Δx
-    #d_eta_dx[1:3].=
-   # d_eta_dx[n-3:n].=NaN
-    
-    """
-    # Handle boundary conditions (if needed)
-    d_eta_dx[1]=(weno5([η[n], η[1], η[2], η[3], η[4]], 3, S)-weno5([η[n-1], η[n], η[1], η[2], η[3]], 3, S))/Δx
-    d_eta_dx[2]=(weno5([η[1], η[2], η[3], η[4], η[5]], 3, S)-weno5([η[n], η[1], η[2], η[3], η[4]], 3, S))/Δx
-    d_eta_dx[3]=(weno5([η[2], η[3], η[4], η[5], η[6]], 3, S)-weno5([η[1], η[2], η[3], η[4], η[5]], 3, S))/Δx
-
-    d_eta_dx[3]=d_eta_dx[4]
-    d_eta_dx[2]=d_eta_dx[4]
-    d_eta_dx[1]=d_eta_dx[4]
-
-    d_eta_dx[n]=(weno5([η[n-1], η[n], η[1], η[2], η[3]], 3, S)-weno5([η[n-2], η[n-1], η[n], η[1], η[2]], 3, S))/Δx
-    d_eta_dx[n-1]=(weno5([η[n-2], η[n-1], η[n], η[1], η[2]], 3, S)-weno5([η[n-3], η[n-2], η[n-1], η[n], η[1]], 3, S))/Δx
-    d_eta_dx[n-2]=(weno5([η[n-3], η[n-2], η[n-1], η[n], η[1]], 3, S)-weno5([η[n-4], η[n-3], η[n-2], η[n-1], η[n]], 3, S))/Δx
-    d_eta_dx[n-3]=(weno5([η[n-4], η[n-3], η[n-2], η[n-1], η[n]], 3, S)-weno5([η[n-5], η[n-4], η[n-3], η[n-2], η[n-1]], 3, S))/Δx
-
-    d_eta_dx[n]=d_eta_dx[n-4]
-    d_eta_dx[n-1]=d_eta_dx[n-4]
-    d_eta_dx[n-2]=d_eta_dx[n-4]
-    d_eta_dx[n-3]=d_eta_dx[n-4]
-    """
-    return d_eta_dx
-end
-
-
-function weno5_second_derivative3(η, Δx, c)
-    n = length(η)
-    d_eta_dx = zeros(n)  # To store the first derivative
-    M = floor(Int,n/2)
-
-    S=1
-
-    # Loop through interior points (avoiding boundaries for now)
-    for i in 4:n-4
-        # Compute WENO5 derivative at each point using 5-point stencil
-        if true
-        #if S==1
-            S=-1
-            d_eta_dx[i] =  (WaveResolvingBQ.weno5(η[i-3:i+3], 3, S)-2*WaveResolvingBQ.weno5(η[i-2:i+2], 3, S) + WaveResolvingBQ.weno5(η[i-1:i+3], 3, S))/Δx^2
-            d_eta_dx[i] =  (weno5(η[i-1:i+3], 3, S)-2*weno5(η[i-2:i+2], 3, S) + weno5(η[i-3:i+1], 3, S))/Δx^2
-        elseif false
-            S=-1
-        #elseif S==-1
-            d_eta_dx[i] =  (WaveResolvingBQ.weno5(η[i-2:i+4], 3, S)-WaveResolvingBQ.weno5(η[i-3:i+3], 3, S))/Δx
-        end
-    end
-
-    d_eta_dx[3] = (η[5]-2*η[4]+η[3])/Δx^2
-    d_eta_dx[2] = (η[4]-2*η[3]+η[2])/Δx^2
-    d_eta_dx[1] = (η[3]-2*η[2]+η[1])/Δx^2
-
-    d_eta_dx[n-3] = (η[n-3]-2*η[n-4]+η[n-5])/Δx^2
-    d_eta_dx[n-2] =  (η[n-2]-2*η[n-3]+η[n-4])/Δx^2
-    d_eta_dx[n-1] = (η[n-1]-2*η[n-2]+η[n-3])/Δx^2
-    d_eta_dx[n] =  (η[n]-2*η[n-1]+η[n-2])/Δx^2
-    
-    #weno5_stencil([η[n-1], η[n], η[1], η[2], η[3]], Δx)
-    # Handle boundary conditions (if needed)
-    #d_eta_dx[1] = d_eta_dx[3]  # Example boundary handling
-    #d_eta_dx[2] = d_eta_dx[3]  # Example boundary handling
-    #d_eta_dx[n] = d_eta_dx[n-3]  # Example boundary handling
-    #d_eta_dx[n-1] =d_eta_dx[n-3]  # Example boundary handling  
-    #d_eta_dx[n-2] =d_eta_dx[n-3]  # Example boundary handling   
-    # For point 1, use a second-order backward finite difference
-    
-    """
-    d_eta_dx[1]=(weno5([η[n], η[1], η[2], η[3], η[4]], 3, S)-weno5([η[n-1], η[n], η[1], η[2], η[3]], 3, S))/Δx
-    d_eta_dx[2]=(weno5([η[1], η[2], η[3], η[4], η[5]], 3, S)-weno5([η[n], η[1], η[2], η[3], η[4]], 3, S))/Δx
-    d_eta_dx[3]=(weno5([η[2], η[3], η[4], η[5], η[6]], 3, S)-weno5([η[1], η[2], η[3], η[4], η[5]], 3, S))/Δx
-
-    d_eta_dx[n]=(weno5([η[n-1], η[n], η[1], η[2], η[3]], 3, S)-weno5([η[n-2], η[n-1], η[n], η[1], η[2]], 3, S))/Δx
-    d_eta_dx[n-1]=(weno5([η[n-2], η[n-1], η[n], η[1], η[2]], 3, S)-weno5([η[n-3], η[n-2], η[n-1], η[n], η[1]], 3, S))/Δx
-    d_eta_dx[n-2]=(weno5([η[n-3], η[n-2], η[n-1], η[n], η[1]], 3, S)-weno5([η[n-4], η[n-3], η[n-2], η[n-1], η[n]], 3, S))/Δx
-    d_eta_dx[n-3]=(weno5([η[n-4], η[n-3], η[n-2], η[n-1], η[n]], 3, S)-weno5([η[n-5], η[n-4], η[n-3], η[n-2], η[n-1]], 3, S))/Δx
-    """
-
-    """
-    d_eta_dx[3]=d_eta_dx[4]
-    d_eta_dx[2]=d_eta_dx[4]
-    d_eta_dx[1]=d_eta_dx[4]
-
-    d_eta_dx[n]=d_eta_dx[n-4]
-    d_eta_dx[n-1]=d_eta_dx[n-4]
-    d_eta_dx[n-2]=d_eta_dx[n-4]
-    d_eta_dx[n-3]=d_eta_dx[n-4]
-    """
-    return d_eta_dx
-end
-
-
-function weno5_second_derivative(η, Δx,c)
-    n = length(η)
-    #d_eta_dx = Union{Float64, Nothing}[nothing for _ in 1:n]  # To store the first derivative
-    d_eta_dx = zeros(n)
-    M = floor(Int,n/2)
-
-    #S=-floor.(Int,sign.(c))
-
-    # Loop through interior points (avoiding boundaries for now)
-    for i in 4:n-4
-        # Compute WENO5 derivative at each point using 5-point stencil
-        S=-1
-        tmp1 =  (weno5(η, i+1, S) + weno5(η, i-1, S) - 2*weno5(η, i, S) ) / Δx^2 * 0.5
-        S=1
-        tmp2 = 0.5*((weno5(η, i+1, S) + weno5(η, i-1, S) - 2*weno5(η, i, S) ) / Δx^2)
-        S=-1
-        #d_eta_dx[i] = d_eta_dx[i]*0.5 + 0.5*((weno5(η, i+1, S) + weno5(η, i-1, S) - 2*weno5(η, i, S) ) / Δx^2)
-        d_eta_dx[i] = tmp1+tmp2
-        #d_eta_dx[i] =  (weno5(η[i-3:i+3], 3, S)-2*weno5(η[i-2:i+2], 3, S) + weno5(η[i-1:i+3], 3, S))/Δx^2
-        #(weno5(η[i-3:i+1], 3, S)+weno5(η[i-1:i+3], 3, S)-2*weno5(η[i-2:i+2], 3, S))/Δx^2
-    end
-
-
-    d_eta_dx[3] = (η[4]-2*η[3]+η[2])/Δx^2
-    d_eta_dx[2] = (η[3]-2*η[2]+η[1])/Δx^2
-    d_eta_dx[1] = d_eta_dx[2]
-
-    d_eta_dx[n-3] = (η[n-2]-2*η[n-3]+η[n-4])/Δx^2
-    d_eta_dx[n-2] =  (η[n-1]-2*η[n-2]+η[n-3])/Δx^2
-    d_eta_dx[n-1] = (η[n]-2*η[n-1]+η[n-2])/Δx^2
-    d_eta_dx[n] =  d_eta_dx[n-1]
-    return d_eta_dx
-end
-
-
-function discretize(::WENO5,var,G::Grid,order;velocity=var*0 .+ 1.0)
-    
+function flux(::WENO5,var,i,G::Grid,order)
     if order==1
-        tmp= weno5_first_derivative(var,G.Δx,velocity) # dépend de quel type d'advection...
+        return weno5(var, i, 1)
     elseif order==2
-        tmp= weno5_second_derivative(var,G.Δx,velocity)
-        #tmp= weno5_first_derivative(tmp,G.Δx,velocity)
+        return (weno5(var, i+1, 1)-weno5(var, i, 1))/G.Δx
+    end
+end
+
+function weno5_first_derivative(var,G::Grid,c)
+    dvar = zeros(G.Nx)
+
+    # Loop through interior points (avoiding boundaries for now)
+    for i in 4:G.Nx-4
+        if c[i]>0
+            dvar[i] = (weno5(var, i, 1) - weno5(var, i-1, 1)) / G.Δx
+        elseif c[i]<0
+            dvar[i] = (weno5(var, i+1, -1) - weno5(var, i, -1)) / G.Δx
+        end
+    end
+    dvar[3] = (var[4]-var[3])/G.Δx
+    dvar[2] = (var[3]-var[2])/G.Δx
+    dvar[1] = (var[2]-var[1])/G.Δx
+
+    dvar[end-3] = (var[end-3]-var[end-4])/G.Δx
+    dvar[end-2] = (var[end-2]-var[end-3])/G.Δx
+    dvar[end-1] = (var[end-1]-var[end-2])/G.Δx
+    dvar[end] = (var[end]-var[end-1])/G.Δx
+
+    return dvar
+end
+
+
+function weno5_second_derivative(var,G::Grid,c)
+    d2var = zeros(G.Nx)
+
+    # Loop through interior points (avoiding boundaries for now)
+    for i in 4:G.Nx-4
+        S=-1
+        tmp1 =  (weno5(var, i+1, S) + weno5(var, i-1, S) - 2*weno5(var, i, S) ) / G.Δx^2 * 0.5
+        S=1
+        tmp2 = 0.5*((weno5(var, i+1, S) + weno5(var, i-1, S) - 2*weno5(var, i, S) ) / G.Δx^2)
+        S=-1
+        d2var[i] = tmp1+tmp2
+    end
+
+
+    d2var[3] = (var[4]-2*var[3]+var[2])/G.Δx^2
+    d2var[2] = (var[3]-2*var[2]+var[1])/G.Δx^2
+    d2var[1] = d2var[2]
+
+    d2var[end-3] = (var[end-2]-2*var[end-3]+var[end-4])/G.Δx^2
+    d2var[end-2] =  (var[end-1]-2*var[end-2]+var[end-3])/G.Δx^2
+    d2var[end-1] = (var[end]-2*var[end-1]+var[end-2])/G.Δx^2
+    d2var[end] =  d2var[end-1]
+    return d2var
+end
+
+
+"""
+function discretize(::WENO5,var,G::Grid,order;velocity=var*0 .+ 1.0)
+    if order==1
+        tmp= weno5_first_derivative(var,G,velocity)
+    elseif order==2
+        tmp= weno5_second_derivative(var,G,velocity)
+    else
+        throw("Order isn't correct. It must be 1 or 2, depending on chosen derivative.")
     end
     return tmp
 end
+"""

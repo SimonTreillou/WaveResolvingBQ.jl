@@ -18,8 +18,8 @@ end
 
 function modelize(M::Advection,S::SpatialScheme,G::Grid,B::Boundaries,η)
     function rhs(η)
-        η_x = discretize(S,η,G,1,velocity=ones(G.Nx)*M.c)
-        tmp = - M.c .* η_x
+        η_x = discretize(S,η,G,1,M.c)
+        tmp = -M.c .* η_x
         apply_boundaries!(B,G,tmp)
         return tmp
     end
@@ -30,9 +30,8 @@ end
 
 function modelize(M::Burgers,S::SpatialScheme,G::Grid,B::Periodic1D,η)
     function rhs(η)
-        η_x = discretize(S,η,G,1,velocity=η)
-        η_xx =  discretize(S,η,G,2,velocity=η)
-       # tmp = η .* η_x - M.ν * η_xx
+        η_x = discretize(S,G.h .* η,G,1,η)
+        η_xx =  discretize(S,G.h .* η,G,2,η)
         tmp = -η .* η_x +  M.ν * η_xx
         apply_boundaries!(B,G,tmp)
         return tmp
@@ -42,10 +41,24 @@ end
 
 function modelize(M::Diffusion,S::SpatialScheme,G::Grid,B::Boundaries,η)
     function rhs(η)
-        η_xx = discretize(S,η,G,2,velocity=η)
+        η_xx = discretize(S,η,G,2,1.0)
         tmp = M.ν * η_xx
         apply_boundaries!(B,G,tmp)
         return tmp
     end
     return rhs
 end
+
+"""
+function modelize(M::SWE,S::SpatialScheme,G::Grid,B::Periodic1D,η)
+    function rhs(η)
+
+        η_x = discretize(S,η,G,1,velocity=η)
+        η_xx =  discretize(S,η,G,2,velocity=η)
+        tmp = -η .* η_x +  M.ν * η_xx
+        apply_boundaries!(B,G,tmp)
+        return tmp
+    end
+    return rhs
+end
+"""
