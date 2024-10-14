@@ -6,20 +6,32 @@ struct Grid
     x::Union{Vector{Float64}, Nothing}
 
     # Depth
-    # ....
+    h::Union{Vector{Float64}, Float64, Nothing}
 end
 
-function Grid(;Δx=nothing,Lx=10.0,Nx=nothing,x=nothing)
+function Grid(;Δx=nothing,Lx=nothing,Nx=nothing,x=nothing,h=nothing)
+    if isnothing(Lx)
+        throw("You need to have at least the domain size (wtf is wrong with you?)")
+    end
+
     # Space
-    if Δx !== nothing
-        Nx = floor(Int, Lx / Δx)
-        Lx = Nx * Δx
+    if isnothing(Nx) && !isnothing(Δx)
         x = collect(0:Δx:Lx-Δx)
-    elseif Nx !== nothing
+        Nx = length(x)
+    elseif isnothing(Δx) && !isnothing(Nx)
         Δx = Lx / Nx
         x = collect(0:Δx:Lx-Δx)
+    elseif isnothing(Δx) && isnothing(Nx)
+        throw("Vous devez fournir au moins une résolution (Δx) ou un nombre de points de grille (Nx) !")
     else
-        error("Vous devez fournir au moins une résolution (Δx) ou un nombre de points de grille (Nx) !")
+        x = collect(0:Δx:Lx-Δx)
     end
-    return Grid(Δx,Lx,Nx,x)
+
+    # Depth 
+    if isnothing(h)
+        h=ones(Nx)
+    elseif size(h)==()
+        h=ones(Nx).*h
+    end
+    return Grid(Δx,Lx,Nx,x,h)
 end
